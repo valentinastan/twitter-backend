@@ -3,7 +3,7 @@ const app = express();
 const morgan = require('./config/morgan');
 const authMiddleware = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
-
+const tweetsRoutes = require('./routes/tweets');
 
 app.use(express.json());
 app.use(morgan)
@@ -15,7 +15,8 @@ app.use((req, res, next) => {
   next();
 })
 
-app.use(authRoutes)
-app.use(authMiddleware)
+app.use('/api', authRoutes)
+// app.use('/api', authMiddleware)
+app.use('/api', tweetsRoutes)
 
 app.listen(2021)

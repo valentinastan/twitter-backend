@@ -1,6 +1,7 @@
-const User =  require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const models = require('../models/index')
+const User = models.User
 
 exports.signUp = async (req, res, next) => {
   const {
@@ -10,8 +11,7 @@ exports.signUp = async (req, res, next) => {
   } = req.body
 
   const hashPass = await bcrypt.hash(password, 12)
-  const user = new User({ email: email, password: hashPass, username: username})
-  const createdUser = await user.save()
+  const createdUser = await User.create({ username: username, email: email, password: hashPass })
 
   res.status(201).json(createdUser)
 }

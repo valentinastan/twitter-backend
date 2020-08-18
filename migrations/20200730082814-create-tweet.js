@@ -20,6 +20,15 @@ module.exports = {
         onDelete: 'CASCADE',
         allowNull: true,
       },
+      tweetId: {
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'Tweets', // name of Target model
+          key: 'id', // key in Target model that we're referencing
+        },
+        onDelete: 'CASCADE',
+        allowNull: true,
+      },
       prevTweetId: {
         type: Sequelize.INTEGER,
         references: {
