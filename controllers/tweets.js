@@ -1,7 +1,7 @@
 const models = require('../models/index')
 const Tweet = models.Tweet
 const Hashtag = models.Hashtag
-const Tweethashtag = models.Tweethashtag
+const Tweethashtag = models.TweetHashtag
 const sequelize = models.sequelize
 const extractUtils = require('../lib/hashtags/extractionUtil')
 
@@ -17,14 +17,14 @@ exports.create = async (req, res, next) => {
     prevTweetId,
   } = req.body
 
+  const tweet = await Tweet.create({
+    userId: 1, 
+    text, 
+    prevTweetId,
+  })
+
   const t = await sequelize.transaction()
   try {
-    const tweet = await Tweet.create({
-      userId: 1, 
-      text, 
-      prevTweetId,
-    })
-
     const arrayHashtags = extractUtils.extractHashtags(text)
     const foundHashtags = await Hashtag.findAll({
       where: {
@@ -32,15 +32,12 @@ exports.create = async (req, res, next) => {
       }
     })
     const foundHashtagsNames = foundHashtags.map(hashtag => hashtag.name)
-    const notFoundHashtags = arrayHashtags.filter(hashtag => !(foundHashtagsNames.includes(hashtag.name)))
-    console.log("NotFoundHashtags------------------------------",notFoundHashtags)
+    const notFoundHashtags = arrayHashtags.filter(hashtag => !(foundHashtagsNames.includes(hashtag.name))).map(hash => hash.toJSON())
     const buildedHashtags = await Hashtag.bulkCreate(notFoundHashtags)
-    console.log("BuildedHashtahs-------------------------------",buildedHashtags)
-    console.log("Found Hashtags--------------------------------",foundHashtags)
     const allHashtags = [...buildedHashtags, ...foundHashtags]
-    console.log("ALL HASHTAGS------------------------------------", allHashtags.map(el => el.name)) //undefined name=ul
+    
     const result = allHashtags.map(hashtag => Tweethashtag.build({ tweetId: tweet.id , hashtagId: hashtag.id }))
-    const tweetHashtag = await Tweethashtag.bulkInsert(result)
+    const tweetHashtag = await Tweethashtag.bulkCreate(result)
 
   await t.commit()
   } catch (error) {
