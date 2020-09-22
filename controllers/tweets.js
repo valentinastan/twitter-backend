@@ -17,14 +17,18 @@ exports.create = async (req, res, next) => {
     prevTweetId,
   } = req.body
 
-  const tweet = await Tweet.create({
-    userId: 1, 
-    text, 
-    prevTweetId,
-  })
-
+  let tweet
   const t = await sequelize.transaction()
+  
   try {
+    tweet = await Tweet.create({
+      userId: req.userId, 
+      text, 
+      prevTweetId,
+    })
+
+    console.log("backend user id din req", req.userId)
+
     const arrayHashtags = extractUtils.extractHashtags(text)
     const foundHashtags = await Hashtag.findAll({
       where: {
@@ -35,11 +39,12 @@ exports.create = async (req, res, next) => {
     const notFoundHashtags = arrayHashtags.filter(hashtag => !(foundHashtagsNames.includes(hashtag.name))).map(hash => hash.toJSON())
     const buildedHashtags = await Hashtag.bulkCreate(notFoundHashtags)
     const allHashtags = [...buildedHashtags, ...foundHashtags]
-    
-    const result = allHashtags.map(hashtag => Tweethashtag.build({ tweetId: tweet.id , hashtagId: hashtag.id }))
-    const tweetHashtag = await Tweethashtag.bulkCreate(result)
+    const result = allHashtags.map(hashtag => {
+      return { hashtagId: hashtag.id, tweetId: tweet.id }
+    })
+    await Tweethashtag.bulkCreate(result)
 
-  await t.commit()
+    await t.commit()
   } catch (error) {
     console.log('THERE WAS AN ERROR CREATING LIKE', error)
     await t.rollback()

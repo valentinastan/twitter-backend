@@ -13,7 +13,15 @@ exports.signUp = async (req, res, next) => {
   const hashPass = await bcrypt.hash(password, 12)
   const createdUser = await User.create({ username: username, email: email, password: hashPass })
 
-  res.status(201).json(createdUser)
+  const token = jwt.sign(
+    {
+      id: createdUser.id,
+    },
+    'super-secret',
+    { expiresIn: '1h' }
+  )
+
+  res.status(201).json({...createdUser, token})
 }
 
 exports.login = async (req, res, next) => {
@@ -39,5 +47,5 @@ exports.login = async (req, res, next) => {
     { expiresIn: '1h' }
   )
 
-  res.status(200).json({ token: token, user: user})
+  res.status(200).json({...user, token})
 }
